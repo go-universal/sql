@@ -3,12 +3,15 @@ module github.com/go-universal/sql
 go 1.24.2
 
 require (
+	github.com/georgysavva/scany/v2 v2.1.4
+	github.com/go-sql-driver/mysql v1.9.2
 	github.com/go-universal/fs v0.0.1
 	github.com/jackc/pgx/v5 v5.7.4
 	github.com/stretchr/testify v1.10.0
 )
 
 require (
+	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
