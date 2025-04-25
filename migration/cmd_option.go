@@ -7,6 +7,7 @@ type cliOption struct {
 	refreshes *optionSet
 	only      *optionSet
 	exclude   *optionSet
+	callback  func()
 }
 
 func newCLIOption() *cliOption {
@@ -62,5 +63,12 @@ func WithSkipFiles(files ...string) CLIOptions {
 func WithNewCMD(enabled bool) CLIOptions {
 	return func(o *cliOption) {
 		o.create = enabled
+	}
+}
+
+// WithCallback register a callback function to call after command finished.
+func WithCallback(cb func()) CLIOptions {
+	return func(o *cliOption) {
+		o.callback = cb
 	}
 }

@@ -14,6 +14,10 @@ func cmdNew(m Migration, option *cliOption) *cobra.Command {
 		Short: "Create a new migration file with default stages in the output path",
 		Args:  cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
+			if option.callback != nil {
+				defer option.callback()
+			}
+
 			if option.root == "" {
 				console.Message().
 					Red("Create").Italic().

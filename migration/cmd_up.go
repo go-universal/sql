@@ -14,6 +14,10 @@ func cmdUp(m Migration, option *cliOption) *cobra.Command {
 	upCmd.Short = "applies migrations"
 	upCmd.Flags().StringP("name", "n", "", "migration name")
 	upCmd.Run = func(cmd *cobra.Command, args []string) {
+		if option.callback != nil {
+			defer option.callback()
+		}
+
 		stages := append([]string{}, args...)
 		if len(stages) == 0 {
 			stages = option.stages.Elements()

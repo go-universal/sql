@@ -19,6 +19,6 @@ func NewMigrationCLI(m Migration, options ...CLIOptions) *cobra.Command {
 	cmd.AddCommand(cmdUp(m, option))
 	cmd.AddCommand(cmdDown(m, option))
 	cmd.AddCommand(cmdRefresh(m, option))
-	cmd.AddCommand(cmdSummary(m))
+	cmd.AddCommand(cmdSummary(m, option))
 	return cmd
 }

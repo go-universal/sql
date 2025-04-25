@@ -14,6 +14,10 @@ func cmdRefresh(m Migration, option *cliOption) *cobra.Command {
 	reCmd.Short = "refresh migrations"
 	reCmd.Flags().StringP("name", "n", "", "migration name")
 	reCmd.Run = func(cmd *cobra.Command, args []string) {
+		if option.callback != nil {
+			defer option.callback()
+		}
+
 		stages := append([]string{}, args...)
 		if len(stages) == 0 {
 			stages = option.refreshes.Elements()

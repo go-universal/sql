@@ -9,11 +9,15 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func cmdSummary(m Migration) *cobra.Command {
+func cmdSummary(m Migration, option *cliOption) *cobra.Command {
 	return &cobra.Command{
 		Use:   "summary",
 		Short: "show migration summary",
 		Run: func(cmd *cobra.Command, args []string) {
+			if option.callback != nil {
+				defer option.callback()
+			}
+
 			summary, err := m.Summary()
 			if err != nil {
 				console.Message().Red("Summary").Italic().Print(err.Error())
