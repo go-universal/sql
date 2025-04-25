@@ -3,18 +3,21 @@ package migration
 import (
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strings"
 
 	"github.com/spf13/cobra"
 )
 
 type optionSet struct {
-	elements map[string]struct{}
+	elements []string
 }
 
 func (s *optionSet) Add(elements ...string) {
 	for _, element := range elements {
-		s.elements[element] = struct{}{}
+		if !slices.Contains(s.elements, element) {
+			s.elements = append(s.elements, element)
+		}
 	}
 }
 
@@ -23,11 +26,7 @@ func (s *optionSet) Size() int {
 }
 
 func (s *optionSet) Elements() []string {
-	keys := make([]string, 0, len(s.elements))
-	for key := range s.elements {
-		keys = append(keys, key)
-	}
-	return keys
+	return append([]string{}, s.elements...)
 }
 
 // normalizePath join and normalize file path.

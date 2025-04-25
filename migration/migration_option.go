@@ -7,8 +7,8 @@ type migrationOption struct {
 
 func newOption() *migrationOption {
 	return &migrationOption{
-		only:    &optionSet{elements: make(map[string]struct{})},
-		exclude: &optionSet{elements: make(map[string]struct{})},
+		only:    &optionSet{elements: make([]string, 0)},
+		exclude: &optionSet{elements: make([]string, 0)},
 	}
 }
 

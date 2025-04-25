@@ -14,10 +14,10 @@ func newCLIOption() *cliOption {
 	return &cliOption{
 		root:      "",
 		create:    false,
-		stages:    &optionSet{elements: make(map[string]struct{})},
-		refreshes: &optionSet{elements: make(map[string]struct{})},
-		only:      &optionSet{elements: make(map[string]struct{})},
-		exclude:   &optionSet{elements: make(map[string]struct{})},
+		stages:    &optionSet{elements: make([]string, 0)},
+		refreshes: &optionSet{elements: make([]string, 0)},
+		only:      &optionSet{elements: make([]string, 0)},
+		exclude:   &optionSet{elements: make([]string, 0)},
 	}
 }
 
