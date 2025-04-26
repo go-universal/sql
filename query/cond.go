@@ -5,6 +5,9 @@ import "strings"
 // ConditionBuilder defines an interface for dynamically constructing SQL conditions.
 // Use '@in' as a placeholder to generate an IN(args1, args2, ...) SQL clause.
 type ConditionBuilder interface {
+	// SetResolver assigns a custom resolver for handling placeholders in SQL queries.
+	SetResolver(resolver PlaceholderResolver) ConditionBuilder
+
 	// And appends a condition using AND.
 	And(query string, args ...any) ConditionBuilder
 
@@ -66,6 +69,11 @@ func NewCondition(resolver ...PlaceholderResolver) ConditionBuilder {
 		conditions:   make([]conditionItem, 0),
 		replacements: make([]string, 0),
 	}
+}
+
+func (b *conditionBuilder) SetResolver(r PlaceholderResolver) ConditionBuilder {
+	b.resolver = r
+	return b
 }
 
 func (b *conditionBuilder) And(q string, args ...any) ConditionBuilder {
