@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"errors"
+	"strings"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -20,6 +21,7 @@ type Finder[T any] interface {
 	WithTransformer(func(*T) error) Finder[T]
 
 	// Rows executes the query and returns a pgx.Rows iterator for processing result rows.
+	// Auto replace @fields with struct fields list
 	Rows(ctx context.Context, args ...any) (pgx.Rows, error)
 
 	// Struct executes the query and retrieves a single result, or an error if the query fails.
@@ -66,7 +68,16 @@ func (f *finder[T]) Rows(ctx context.Context, args ...any) (pgx.Rows, error) {
 		return nil, ErrEmptySQL
 	}
 
-	sql := compile(f.sql, f.replacements...)
+	replacements := append([]string{}, f.replacements...)
+	if columns := typeColumns[T]([]string{}, []string{}); len(columns) > 0 {
+		replacements = append(
+			replacements,
+			"@fields",
+			strings.Join(columns, ","),
+		)
+	}
+
+	sql := compile(f.sql, replacements...)
 	rows, err := f.db.Query(ctx, sql, args...)
 
 	if errors.Is(err, pgx.ErrNoRows) {

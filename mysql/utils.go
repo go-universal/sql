@@ -53,6 +53,12 @@ func structColumns(v any, only, exclude []string) []string {
 	return columns
 }
 
+// typeColumns extracts column names from the `db` struct tag from type
+func typeColumns[T any](only, exclude []string) []string {
+	var v T
+	return structColumns(v, only, exclude)
+}
+
 // structValues extracts field values from a struct based on the `db` tag, excluding unexported fields.
 func structValues(v any, only, exclude []string) []any {
 	val := reflect.Indirect(reflect.ValueOf(v))

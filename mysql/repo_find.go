@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"strings"
 
 	"github.com/georgysavva/scany/v2/sqlscan"
 )
@@ -21,6 +22,7 @@ type Finder[T any] interface {
 	WithTransformer(func(*T) error) Finder[T]
 
 	// Rows executes the query and returns a pgx.Rows iterator for processing result rows.
+	// Auto replace @fields with struct fields list
 	Rows(ctx context.Context, args ...any) (*sql.Rows, error)
 
 	// Struct executes the query and retrieves a single result, or an error if the query fails.
@@ -67,7 +69,16 @@ func (f *finder[T]) Rows(ctx context.Context, args ...any) (*sql.Rows, error) {
 		return nil, ErrEmptySQL
 	}
 
-	cmd := compile(f.sql, f.replacements...)
+	replacements := append([]string{}, f.replacements...)
+	if columns := typeColumns[T]([]string{}, []string{}); len(columns) > 0 {
+		replacements = append(
+			replacements,
+			"@fields",
+			strings.Join(columns, ","),
+		)
+	}
+
+	cmd := compile(f.sql, replacements...)
 	rows, err := f.db.QueryContext(ctx, cmd, args...)
 
 	if errors.Is(err, sql.ErrNoRows) {
