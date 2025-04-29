@@ -102,7 +102,9 @@ func (f *finder[T]) Struct(ctx context.Context, args ...any) (*T, error) {
 	}
 
 	result, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[T])
-	if err != nil {
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	} else if err != nil {
 		return nil, err
 	}
 
@@ -134,7 +136,9 @@ func (f *finder[T]) Structs(ctx context.Context, args ...any) ([]T, error) {
 	}
 
 	results, err := pgx.CollectRows(rows, pgx.RowToStructByName[T])
-	if err != nil {
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	} else if err != nil {
 		return nil, err
 	}
 
