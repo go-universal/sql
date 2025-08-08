@@ -14,12 +14,8 @@ func NewMigrationCLI(m Migration, options ...CLIOptions) *cobra.Command {
 		Short: "migrate database",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cmd.Help()
-			if cmd == cmd.Root() && len(args) == 0 {
-				if option.callback != nil {
-					go func() {
-						option.callback()
-					}()
-				}
+			if option.callback != nil {
+				go func() { option.callback() }()
 			}
 			return nil
 		},
