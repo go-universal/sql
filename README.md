@@ -13,7 +13,7 @@
 
 ### Query Builder
 
-The QueryBuilder provide functions for dynamically constructing SQL conditions.
+The ConditionBuilder provide functions for dynamically constructing SQL conditions.
 
 #### Basic Conditions
 
@@ -33,7 +33,7 @@ func main() {
 
 #### Nested Conditions
 
-The QueryBuilder supports nested conditions using `AndNested` and `OrNested` for complex query logic.
+The ConditionBuilder supports nested conditions using `AndNested` and `OrNested` for complex query logic.
 
 ##### AndNested
 
@@ -43,8 +43,8 @@ The QueryBuilder supports nested conditions using `AndNested` and `OrNested` for
 func main() {
     q := query.NewCondition(nil)
     q.And("deleted_at IS NULL").
-        AndNested(func(qb query.QueryBuilder) {
-            qb.Or("name = ?", "John").
+        AndNested(func(b query.ConditionBuilder) {
+            b.Or("name = ?", "John").
                 Or("family = ?", "Doe")
         })
 
@@ -60,8 +60,8 @@ func main() {
 func main() {
     q := query.NewCondition(nil)
     q.And("deleted_at IS NULL").
-        OrNested(func(qb query.QueryBuilder) {
-            qb.And("age > ?", 18).
+        OrNested(func(b query.ConditionBuilder) {
+            b.And("age > ?", 18).
                 And("status = ?", "active")
         })
 
@@ -77,9 +77,9 @@ Nested builders can contain other nested builders for complex multi-level condit
 func main() {
     q := query.NewCondition(nil)
     q.And("deleted_at IS NULL").
-        AndNested(func(qb query.QueryBuilder) {
-            qb.Or("name = ?", "John").
-                OrNested(func(nested query.QueryBuilder) {
+        AndNested(func(b query.ConditionBuilder) {
+            b.Or("name = ?", "John").
+                OrNested(func(nested query.ConditionBuilder) {
                     nested.And("status = ?", "active").
                         And("role = ?", "admin")
                 })

@@ -29,11 +29,11 @@ type QueryBuilder interface {
 	// OrClosureIf appends a nested condition using OR if 'cond' is true.
 	OrClosureIf(cond bool, query string, args ...any) QueryBuilder
 
-	// OrNested appends a nested group of conditions using OR.
-	OrNested(cb func(qb QueryBuilder)) QueryBuilder
-
 	// AndNested appends a nested group of conditions using AND.
 	AndNested(cb func(qb QueryBuilder)) QueryBuilder
+
+	// OrNested appends a nested group of conditions using OR.
+	OrNested(cb func(qb QueryBuilder)) QueryBuilder
 
 	// Replace swaps occurrences of 'old' with 'new' in the final SQL query.
 	// Common placeholders include '@sort' and '@order'.
