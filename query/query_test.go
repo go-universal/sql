@@ -86,4 +86,81 @@ SELECT id, name, age FROM users WHERE @conditions;
 			Build()
 		assert.Equal(t, expected, q)
 	})
+
+	t.Run("Should build query with AndNested", func(t *testing.T) {
+		expected := `SELECT id, name, age FROM users WHERE deleted_at IS NULL AND (name = ? OR family = ?);`
+		q := manager.Query("user/single").
+			And("deleted_at IS NULL").
+			AndNested(func(qb query.QueryBuilder) {
+				qb.Or("name = ?", "John").
+					Or("family = ?", "Doe")
+			}).
+			Build()
+		assert.Equal(t, expected, q)
+	})
+
+	t.Run("Should build query with OrNested", func(t *testing.T) {
+		expected := `SELECT id, name, age FROM users WHERE deleted_at IS NULL OR (age > ? AND status = ?);`
+		q := manager.Query("user/single").
+			And("deleted_at IS NULL").
+			OrNested(func(qb query.QueryBuilder) {
+				qb.And("age > ?", 18).
+					And("status = ?", "active")
+			}).
+			Build()
+		assert.Equal(t, expected, q)
+	})
+
+	t.Run("Should build query with multiple nested conditions", func(t *testing.T) {
+		expected := `SELECT id, name, age FROM users WHERE deleted_at IS NULL AND (name = ? OR family = ?) OR (status = ? AND role = ?);`
+		q := manager.Query("user/single").
+			And("deleted_at IS NULL").
+			AndNested(func(qb query.QueryBuilder) {
+				qb.Or("name = ?", "John").
+					Or("family = ?", "Doe")
+			}).
+			OrNested(func(qb query.QueryBuilder) {
+				qb.And("status = ?", "active").
+					And("role = ?", "admin")
+			}).
+			Build()
+		assert.Equal(t, expected, q)
+	})
+
+	t.Run("Should ignore empty AndNested", func(t *testing.T) {
+		expected := `SELECT id, name, age FROM users WHERE deleted_at IS NULL;`
+		q := manager.Query("user/single").
+			And("deleted_at IS NULL").
+			AndNested(func(qb query.QueryBuilder) {
+				// Empty nested builder
+			}).
+			Build()
+		assert.Equal(t, expected, q)
+	})
+
+	t.Run("Should ignore empty OrNested", func(t *testing.T) {
+		expected := `SELECT id, name, age FROM users WHERE deleted_at IS NULL;`
+		q := manager.Query("user/single").
+			And("deleted_at IS NULL").
+			OrNested(func(qb query.QueryBuilder) {
+				// Empty nested builder
+			}).
+			Build()
+		assert.Equal(t, expected, q)
+	})
+
+	t.Run("Should build deeply nested query", func(t *testing.T) {
+		expected := `SELECT id, name, age FROM users WHERE deleted_at IS NULL AND (name = ? OR (status = ? AND role = ?));`
+		q := manager.Query("user/single").
+			And("deleted_at IS NULL").
+			AndNested(func(qb query.QueryBuilder) {
+				qb.Or("name = ?", "John").
+					OrNested(func(nested query.QueryBuilder) {
+						nested.And("status = ?", "active").
+							And("role = ?", "admin")
+					})
+			}).
+			Build()
+		assert.Equal(t, expected, q)
+	})
 }

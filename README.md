@@ -13,7 +13,9 @@
 
 ### Query Builder
 
-The ConditionBuilder provide functions for dynamically constructing SQL conditions.
+The QueryBuilder provide functions for dynamically constructing SQL conditions.
+
+#### Basic Conditions
 
 ```go
 import "github.com/go-universal/sql/query"
@@ -26,6 +28,64 @@ func main() {
         OrClosureIf(true, "membership @in", "admin", "manager", "accountant")
 
     // Result: "name = $1 AND (age > $2 AND age < $3) OR (membership IN ($4, $5, $6))"
+}
+```
+
+#### Nested Conditions
+
+The QueryBuilder supports nested conditions using `AndNested` and `OrNested` for complex query logic.
+
+##### AndNested
+
+`AndNested` appends a nested group of conditions joined with AND:
+
+```go
+func main() {
+    q := query.NewCondition(nil)
+    q.And("deleted_at IS NULL").
+        AndNested(func(qb query.QueryBuilder) {
+            qb.Or("name = ?", "John").
+                Or("family = ?", "Doe")
+        })
+
+    // Result: "deleted_at IS NULL AND (name = ? OR family = ?)"
+}
+```
+
+##### OrNested
+
+`OrNested` appends a nested group of conditions joined with OR:
+
+```go
+func main() {
+    q := query.NewCondition(nil)
+    q.And("deleted_at IS NULL").
+        OrNested(func(qb query.QueryBuilder) {
+            qb.And("age > ?", 18).
+                And("status = ?", "active")
+        })
+
+    // Result: "deleted_at IS NULL OR (age > ? AND status = ?)"
+}
+```
+
+##### Deep Nesting
+
+Nested builders can contain other nested builders for complex multi-level conditions:
+
+```go
+func main() {
+    q := query.NewCondition(nil)
+    q.And("deleted_at IS NULL").
+        AndNested(func(qb query.QueryBuilder) {
+            qb.Or("name = ?", "John").
+                OrNested(func(nested query.QueryBuilder) {
+                    nested.And("status = ?", "active").
+                        And("role = ?", "admin")
+                })
+        })
+
+    // Result: "deleted_at IS NULL AND (name = ? OR (status = ? AND role = ?))"
 }
 ```
 

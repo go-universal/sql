@@ -29,6 +29,12 @@ type QueryBuilder interface {
 	// OrClosureIf appends a nested condition using OR if 'cond' is true.
 	OrClosureIf(cond bool, query string, args ...any) QueryBuilder
 
+	// OrNested appends a nested group of conditions using OR.
+	OrNested(cb func(qb QueryBuilder)) QueryBuilder
+
+	// AndNested appends a nested group of conditions using AND.
+	AndNested(cb func(qb QueryBuilder)) QueryBuilder
+
 	// Replace swaps occurrences of 'old' with 'new' in the final SQL query.
 	// Common placeholders include '@sort' and '@order'.
 	Replace(old, new string) QueryBuilder
@@ -100,6 +106,44 @@ func (b *queryBuilder) OrClosureIf(c bool, q string, args ...any) QueryBuilder {
 	if c {
 		b.addItem(q, "OR", true, args...)
 	}
+	return b
+}
+
+func (b *queryBuilder) AndNested(cb func(QueryBuilder)) QueryBuilder {
+	nested := &queryBuilder{
+		sql:        "",
+		resolver:   b.resolver,
+		conditions: []queryItem{},
+	}
+
+	cb(nested)
+
+	if len(nested.conditions) == 0 {
+		return b
+	}
+
+	nestedSQL := nested.sqlConditions()
+	b.addItem(nestedSQL, "AND", true, nested.Arguments()...)
+
+	return b
+}
+
+func (b *queryBuilder) OrNested(cb func(QueryBuilder)) QueryBuilder {
+	nested := &queryBuilder{
+		sql:        "",
+		resolver:   b.resolver,
+		conditions: []queryItem{},
+	}
+
+	cb(nested)
+
+	if len(nested.conditions) == 0 {
+		return b
+	}
+
+	nestedSQL := nested.sqlConditions()
+	b.addItem(nestedSQL, "OR", true, nested.Arguments()...)
+
 	return b
 }
 
