@@ -8,6 +8,9 @@ type ConditionBuilder interface {
 	// SetResolver assigns a custom resolver for handling placeholders in SQL queries.
 	SetResolver(resolver PlaceholderResolver) ConditionBuilder
 
+	// SetQuote assigns a custom resolver for handling identity quote in SQL queries.
+	SetQuote(resolver QuoteResolver) ConditionBuilder
+
 	// And appends a condition using AND.
 	And(query string, args ...any) ConditionBuilder
 
@@ -63,6 +66,7 @@ type conditionItem struct {
 
 type conditionBuilder struct {
 	resolver     PlaceholderResolver
+	quote        QuoteResolver
 	conditions   []conditionItem
 	replacements []string
 }
@@ -72,6 +76,7 @@ type conditionBuilder struct {
 func NewCondition(resolver ...PlaceholderResolver) ConditionBuilder {
 	return &conditionBuilder{
 		resolver:     parseVariadic(nil, resolver...),
+		quote:        nil,
 		conditions:   make([]conditionItem, 0),
 		replacements: make([]string, 0),
 	}
@@ -79,6 +84,11 @@ func NewCondition(resolver ...PlaceholderResolver) ConditionBuilder {
 
 func (b *conditionBuilder) SetResolver(r PlaceholderResolver) ConditionBuilder {
 	b.resolver = r
+	return b
+}
+
+func (b *conditionBuilder) SetQuote(r QuoteResolver) ConditionBuilder {
+	b.quote = r
 	return b
 }
 
@@ -133,6 +143,7 @@ func (b *conditionBuilder) OrClosureIf(c bool, q string, args ...any) ConditionB
 func (b *conditionBuilder) AndNested(cb func(ConditionBuilder)) ConditionBuilder {
 	nested := &conditionBuilder{
 		resolver:   b.resolver,
+		quote:      b.quote,
 		conditions: []conditionItem{},
 	}
 
@@ -151,6 +162,7 @@ func (b *conditionBuilder) AndNested(cb func(ConditionBuilder)) ConditionBuilder
 func (b *conditionBuilder) OrNested(cb func(ConditionBuilder)) ConditionBuilder {
 	nested := &conditionBuilder{
 		resolver:   b.resolver,
+		quote:      b.quote,
 		conditions: []conditionItem{},
 	}
 
@@ -167,7 +179,15 @@ func (b *conditionBuilder) OrNested(cb func(ConditionBuilder)) ConditionBuilder 
 }
 
 func (b *conditionBuilder) Replace(o, n string) ConditionBuilder {
+	if b.quote != nil {
+		b.replacements = append(
+			b.replacements,
+			b.quote(o), n,
+		)
+	}
+
 	b.replacements = append(b.replacements, o, n)
+
 	return b
 }
 
@@ -181,6 +201,11 @@ func (b *conditionBuilder) SQL() string {
 		// Generate @in placeholder
 		if strings.Contains(query, "@in") {
 			placeholders := strings.TrimLeft(strings.Repeat(", ?", len(cond.arguments)), ", ")
+
+			if b.quote != nil {
+				query = strings.Replace(query, b.quote("@in"), "IN ("+placeholders+")", 1)
+			}
+
 			query = strings.Replace(query, "@in", "IN ("+placeholders+")", 1)
 		}
 
@@ -222,13 +247,23 @@ func (b *conditionBuilder) Build(q string) string {
 		where = "WHERE " + conditions
 	}
 
-	return strings.NewReplacer(
-		append(
-			b.replacements,
-			"@conditions", conditions,
-			"@where", where,
-		)...,
-	).Replace(q)
+	replacements := append([]string{}, b.replacements...)
+
+	if b.quote != nil {
+		replacements = append(
+			replacements,
+			b.quote("@conditions"), conditions,
+			b.quote("@where"), where,
+		)
+	}
+
+	replacements = append(
+		replacements,
+		"@conditions", conditions,
+		"@where", where,
+	)
+
+	return strings.NewReplacer(replacements...).Replace(q)
 }
 
 func (b *conditionBuilder) Arguments() []any {

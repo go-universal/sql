@@ -44,3 +44,10 @@ func WithResolver(resolver PlaceholderResolver) Options {
 		q.resolver = resolver
 	}
 }
+
+// WithQuote assigns a custom resolver for handling identity quote in SQL queries
+func WithQuote(resolver QuoteResolver) Options {
+	return func(q *queryManager) {
+		q.quote = resolver
+	}
+}

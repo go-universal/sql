@@ -21,11 +21,11 @@ func TestConditionBuilder_SQL(t *testing.T) {
 }
 
 func TestConditionBuilder_Build(t *testing.T) {
-	cond := query.NewCondition()
+	cond := query.NewCondition().SetQuote(query.DoubleQuoteResolver)
 	cond.And("name = ?", "John").
 		AndClosure("age > ? AND age < ?", 9, 31).
 		OrIf(false, "age IS NULL").
-		OrClosureIf(true, "membership @in", "admin", "manager", "accountant")
+		OrClosureIf(true, `membership "@in"`, "admin", "manager", "accountant")
 
 	expected := "SELECT COUNT(*) FROM `users` WHERE name = ? AND (age > ? AND age < ?) OR (membership IN (?, ?, ?));"
 	result := cond.Build("SELECT COUNT(*) FROM `users` @where;")

@@ -43,7 +43,11 @@ func (c *counter) Query(s string) Counter {
 }
 
 func (c *counter) Replace(o, n string) Counter {
-	c.replacements = append(c.replacements, o, n)
+	c.replacements = append(
+		c.replacements,
+		quoteField(o), n,
+		o, n,
+	)
 	return c
 }
 

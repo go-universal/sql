@@ -55,7 +55,11 @@ func (f *finder[T]) Query(s string) Finder[T] {
 }
 
 func (f *finder[T]) Replace(o, n string) Finder[T] {
-	f.replacements = append(f.replacements, o, n)
+	f.replacements = append(
+		f.replacements,
+		quoteField(o), n,
+		o, n,
+	)
 	return f
 }
 
@@ -71,10 +75,11 @@ func (f *finder[T]) Rows(ctx context.Context, args ...any) (*sql.Rows, error) {
 
 	replacements := append([]string{}, f.replacements...)
 	if columns := typeColumns[T]([]string{}, []string{}); len(columns) > 0 {
+		fields := strings.Join(columns, ",")
 		replacements = append(
 			replacements,
-			"@fields",
-			strings.Join(columns, ","),
+			quoteField("@fields"), fields,
+			"@fields", fields,
 		)
 	}
 

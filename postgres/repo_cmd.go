@@ -41,7 +41,11 @@ func (c *commander) Command(s string) Commander {
 }
 
 func (c *commander) Replace(o, n string) Commander {
-	c.replacements = append(c.replacements, o, n)
+	c.replacements = append(
+		c.replacements,
+		quoteField(o), n,
+		o, n,
+	)
 	return c
 }
 

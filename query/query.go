@@ -31,6 +31,7 @@ type queryManager struct {
 	fs       fs.FlexibleFS
 	queries  map[string]string
 	resolver PlaceholderResolver
+	quote    QuoteResolver
 	mutex    sync.RWMutex
 }
 
@@ -43,6 +44,7 @@ func NewQueryManager(fs fs.FlexibleFS, options ...Options) (QueryManager, error)
 		fs:       fs,
 		queries:  make(map[string]string),
 		resolver: nil,
+		quote:    nil,
 	}
 
 	for _, opt := range options {
@@ -113,6 +115,7 @@ func (m *queryManager) Query(n string) QueryBuilder {
 	return &queryBuilder{
 		sql:          m.Get(n),
 		resolver:     m.resolver,
+		quote:        m.quote,
 		conditions:   make([]queryItem, 0),
 		replacements: make([]string, 0),
 	}

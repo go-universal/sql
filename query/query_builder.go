@@ -57,6 +57,7 @@ type queryItem struct {
 type queryBuilder struct {
 	sql          string
 	resolver     PlaceholderResolver
+	quote        QuoteResolver
 	conditions   []queryItem
 	replacements []string
 }
@@ -113,6 +114,7 @@ func (b *queryBuilder) AndNested(cb func(QueryBuilder)) QueryBuilder {
 	nested := &queryBuilder{
 		sql:        "",
 		resolver:   b.resolver,
+		quote:      b.quote,
 		conditions: []queryItem{},
 	}
 
@@ -132,6 +134,7 @@ func (b *queryBuilder) OrNested(cb func(QueryBuilder)) QueryBuilder {
 	nested := &queryBuilder{
 		sql:        "",
 		resolver:   b.resolver,
+		quote:      b.quote,
 		conditions: []queryItem{},
 	}
 
@@ -148,7 +151,15 @@ func (b *queryBuilder) OrNested(cb func(QueryBuilder)) QueryBuilder {
 }
 
 func (b *queryBuilder) Replace(o, n string) QueryBuilder {
+	if b.quote != nil {
+		b.replacements = append(
+			b.replacements,
+			b.quote(o), n,
+		)
+	}
+
 	b.replacements = append(b.replacements, o, n)
+
 	return b
 }
 
@@ -159,13 +170,23 @@ func (b *queryBuilder) Build() string {
 		where = "WHERE " + conditions
 	}
 
-	return strings.NewReplacer(
-		append(
-			b.replacements,
-			"@conditions", conditions,
-			"@where", where,
-		)...,
-	).Replace(b.sql)
+	replacements := append([]string{}, b.replacements...)
+
+	if b.quote != nil {
+		replacements = append(
+			replacements,
+			b.quote("@conditions"), conditions,
+			b.quote("@where"), where,
+		)
+	}
+
+	replacements = append(
+		replacements,
+		"@conditions", conditions,
+		"@where", where,
+	)
+
+	return strings.NewReplacer(replacements...).Replace(b.sql)
 }
 
 func (b *queryBuilder) Arguments() []any {
@@ -199,6 +220,10 @@ func (b *queryBuilder) sqlConditions() string {
 		// Generate @in placeholder
 		if strings.Contains(query, "@in") {
 			placeholders := strings.TrimLeft(strings.Repeat(", ?", len(cond.arguments)), ", ")
+			if b.quote != nil {
+				query = strings.Replace(query, b.quote("@in"), "IN ("+placeholders+")", 1)
+			}
+
 			query = strings.Replace(query, "@in", "IN ("+placeholders+")", 1)
 		}
 
